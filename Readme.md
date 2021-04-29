@@ -1,0 +1,1 @@
+Program reads the file in ZIP archive, changes the word "Java" to "Avaj" and packs the file back to archive.
