@@ -1,23 +1,33 @@
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class MainApp {
     public static void main(String[] args) {
-        readAndSwap("../zipfile/testfile.txt");
+        readAndSwap("../zipfile/zipka.zip");
     }
 
     private static void readAndSwap(String path) {
         try {
-            String value = "Java";
-            List<String> contents = Files.readAllLines(Paths.get(path));
-            for (String line : contents) {
-                line = swap(line);
-                System.out.println(line);
+            FileInputStream fileInputStream = new FileInputStream(path);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+            ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream);
+
+            ZipEntry zipEntry;
+            List<String> contents = new ArrayList<>();
+
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                contents.add(zipEntry.toString());
             }
 
-        } catch (IOException e) {
+            System.out.println(contents);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
