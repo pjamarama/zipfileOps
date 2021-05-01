@@ -1,14 +1,21 @@
-import sun.misc.IOUtils;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
+
+/*
++ Прочитать архив
+Найти файл с нужным именем
++ Считать его содержимое
++ Заменить содержимое
+Создать файл добавить его в архив
+Удалить оригинальный
+Переменовать в оригинальный
+
+ */
+
 
 public class MainApp {
     public static void main(String[] args) {
@@ -22,13 +29,8 @@ public class MainApp {
             ZipEntry zipEntry = zipFile.getEntry("testfile.txt");
             InputStream inputStream = zipFile.getInputStream(zipEntry);
 
-
-//            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-////                contents.add(zipEntry.toString());
-//            }
-
             String contents = new BufferedReader(new InputStreamReader(inputStream))
-                    .lines().peek(System.out::println).collect(Collectors.joining("\n"));
+                    .lines().collect(Collectors.joining("\n"));
 
             contents = swap(contents);
 
