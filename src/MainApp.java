@@ -1,28 +1,116 @@
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
+import java.io.*;
+import java.net.URI;
+import java.nio.file.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+
+/*
++ Прочитать архив
++ Найти файл с нужным именем
++ Считать его содержимое
++ Заменить содержимое
++ Создать временный файл
++ Добавить файл в архив
++ Удалить оригинальный файл в архиве
++ Удалить временный файл
+
++ Написать джавадок к каждому методу
+
+ */
+
 
 public class MainApp {
     public static void main(String[] args) {
-        readAndSwap("../zipfile/testfile.txt");
+        readAndSwap("zipka.zip");
     }
 
-    private static void readAndSwap(String path) {
-        try {
-            String value = "Java";
-            List<String> contents = Files.readAllLines(Paths.get(path));
-            for (String line : contents) {
-                line = swap(line);
-                System.out.println(line);
+    private static void readAndSwap(String archiveFileName) {
+
+        try (FileInputStream fileInputStream = new FileInputStream(archiveFileName); // Прочитать архив
+             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+             ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream)) {
+
+            ZipEntry entry;
+            String contents = "";
+
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                if (entry.getName().equals("testfile.txt")) { // Найти файл с нужным именем
+                    contents = getContents(archiveFileName); // Считать его содержимое
+                }
             }
 
-        } catch (IOException e) {
+            String alteredContents = contents.replace("Java", "Avaj"); // Заменить содержимое
+            createTempFile(alteredContents); // Создать файл
+            addToArchive(); // Добавить файл в архив
+            deleteTempFile(); // Удалить временный файл
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static String swap(String line) {
-        return line.replace("Java", "Avaj");
+    /**
+     * Возвращает содержимое файла "testfile.txt", который хранится в zip-архиве,
+     * в виде объекта String.
+     *
+     * @param path Имя zip-архива
+     * @return Содержимое testfile.txt
+     * @throws IOException
+     */
+    private static String getContents(String path) throws IOException {
+        ZipFile zipFile = new ZipFile(path);
+        ZipEntry zipEntry = zipFile.getEntry("testfile.txt");
+        InputStream inputStream = zipFile.getInputStream(zipEntry);
+
+        return new BufferedReader(new InputStreamReader(inputStream))
+                .lines().collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Записывает во временный файл "./altered.tmp" изменённое содержимое "testfile.txt".
+     *
+     * @param alteredContents Содержимое testfile.txt после изменений
+     * @throws IOException
+     */
+    private static void createTempFile(String alteredContents) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("altered.tmp"))) {
+            bw.write(alteredContents);
+        }
+    }
+
+    /**
+     * Добавляет содержимое altered.tmp в архив и переименовывает его в
+     * "/testfile.txt" с заменой одноименного существующего файла.
+     *
+     * @throws IOException
+     */
+    private static void addToArchive() throws IOException {
+
+        Map<String, String> env = new HashMap<>();
+        env.put("create", "true");
+
+        URI uri = URI.create("jar:file:/Users/alexey/IdeaProjects/zipfile/zipka.zip");
+
+        try (FileSystem zipfs = FileSystems.newFileSystem(uri, env)) {
+            Path externalTxtFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
+            Path pathInZipfile = zipfs.getPath("/testfile.txt");
+            Files.copy(externalTxtFile,pathInZipfile, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /**
+     * Удаляет временный файл "altered.tmp".
+     *
+     * @throws IOException
+     */
+    private static void deleteTempFile() throws IOException {
+
+            Path tempFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
+            Files.delete(tempFile);
+
     }
 }
