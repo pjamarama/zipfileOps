@@ -8,20 +8,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-/*
-+ Прочитать архив
-+ Найти файл с нужным именем
-+ Считать его содержимое
-+ Заменить содержимое
-+ Создать временный файл
-+ Добавить файл в архив
-+ Удалить оригинальный файл в архиве
-+ Удалить временный файл
-
-+ Написать джавадок к каждому методу
-
- */
-
 
 public class MainApp {
     public static void main(String[] args) {
@@ -30,7 +16,7 @@ public class MainApp {
 
     private static void readAndSwap(String archiveFileName) {
 
-        try (FileInputStream fileInputStream = new FileInputStream(archiveFileName); // Прочитать архив
+        try (FileInputStream fileInputStream = new FileInputStream(archiveFileName);
              BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
              ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream)) {
 
@@ -38,15 +24,15 @@ public class MainApp {
             String contents = "";
 
             while ((entry = zipInputStream.getNextEntry()) != null) {
-                if (entry.getName().equals("testfile.txt")) { // Найти файл с нужным именем
-                    contents = getContents(archiveFileName); // Считать его содержимое
+                if (entry.getName().equals("testfile.txt")) {
+                    contents = getContents(archiveFileName);
                 }
             }
 
-            String alteredContents = contents.replace("Java", "Avaj"); // Заменить содержимое
-            createTempFile(alteredContents); // Создать файл
-            addToArchive(); // Добавить файл в архив
-            deleteTempFile(); // Удалить временный файл
+            String alteredContents = contents.replace("Java", "Avaj");
+            createTempFile(alteredContents);
+            addToArchive();
+            deleteTempFile();
 
         } catch (Exception e) {
             e.printStackTrace();
