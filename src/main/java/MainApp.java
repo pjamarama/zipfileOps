@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,8 +14,20 @@ import java.util.zip.ZipInputStream;
 public class MainApp {
     public static void main(String[] args) {
         readAndSwap(new Filler(
-                "Java", "Avaj", "zipka.zip", "testfile.txt"
+                "Java", "Kotlin", "zipka.zip", "testfile.txt"
         ));
+
+//        Filler f = new  Filler("Java", "Avaj", "zipka.zip", "testfile.txt");
+//        MainApp app = new MainApp();
+
+//        try {
+//            File zip = app.getFileFromResource("zipka.zip");
+//            System.out.println(zip.getAbsolutePath());
+//        } catch (URISyntaxException e) {e.printStackTrace();}
+
+        File file = new File("resources/zipka.zip");
+        System.out.println(file.getAbsolutePath());
+
     }
 
     /**
@@ -23,9 +37,23 @@ public class MainApp {
      */
     private static void readAndSwap(Filler filler) {
 
-        try (FileInputStream fileInputStream = new FileInputStream(filler.getPathToZip());
+        /*
+        File file = new File(filler.getPathToZip());
+        Path pathForFS = Paths.get(file.getParent(), filler.getPathToZip());
+         */
+
+
+
+
+
+        try {
+            MainApp app = new MainApp();
+            URL resource = app.getClass().getClassLoader().getResource(filler.getPathToZip());
+            File zipFile = Paths.get(resource.toURI()).toFile();
+
+            FileInputStream fileInputStream = new FileInputStream(zipFile.getAbsolutePath());
              BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-             ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream)) {
+             ZipInputStream zipInputStream = new ZipInputStream(bufferedInputStream);
 
             ZipEntry entry;
             String contents = "";
@@ -39,7 +67,7 @@ public class MainApp {
             String alteredContents = contents.replace("Java", "Avaj");
             createTempFile(alteredContents);
             addToArchive(filler);
-            deleteTempFile();
+//            deleteTempFile();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,14 +98,17 @@ public class MainApp {
      * @throws IOException
      */
     private static void createTempFile(String alteredContents) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter("altered.tmp"))) {
+        File tempFile = File.createTempFile("altered", null);
+        tempFile.deleteOnExit();
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile))) {
             bw.write(alteredContents);
         }
     }
 
     /**
-     * Добавляет содержимое altered.tmp в архив и переименовывает его в
-     * "/testfile.txt" с заменой одноименного существующего файла.
+     * Добавляет содержимое altered.tmp в архив и переименовывает его
+     * с заменой одноименного существующего файла.
      *
      * @throws IOException
      */
@@ -87,25 +118,41 @@ public class MainApp {
         env.put("create", "true");
 
 //        @todo: поправить абсолютный путь
+        File file = new File(filler.getPathToZip());
+        File altered = new File("altered.tmp");
+        Path pathForFS = Paths.get(file.getParent(), filler.getPathToZip());
 //        URI uri = URI.create("jar:file:/Users/alexey/IdeaProjects/zipfile/zipka.zip");
-        URI uri = URI.create(filler.getPathToZip());
 
-        try (FileSystem zipfs = FileSystems.newFileSystem(uri, env)) {
-            Path externalTxtFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
+
+        try (FileSystem zipfs = FileSystems.newFileSystem(pathForFS, ClassLoader.getSystemClassLoader())) {
+//            Path externalTxtFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
+            Path externalTxtFile = Paths.get(altered.getAbsolutePath());
             Path pathInZipfile = zipfs.getPath(filler.getFileNameInZip());
-            Files.copy(externalTxtFile,pathInZipfile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(externalTxtFile, pathInZipfile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
-    /**
-     * Удаляет временный файл "altered.tmp".
-     *
-     * @throws IOException
-     */
-    private static void deleteTempFile() throws IOException {
+//    /**
+//     * Удаляет временный файл "altered.tmp".
+//     *
+//     * @throws IOException
+//     */
+//    private static void deleteTempFile() throws IOException {
+//
+//        Path tempFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
+//        Files.delete(tempFile);
+//
+//    }
 
-            Path tempFile = Paths.get("/Users/alexey/IdeaProjects/zipfile/altered.tmp");
-            Files.delete(tempFile);
-
-    }
+//    private File getFileFromResource(String fileName) throws URISyntaxException {
+//
+//        ClassLoader classLoader = getClass().getClassLoader();
+//        URL url = classLoader.getResource(fileName);
+//        if (url == null) {
+//            throw new IllegalArgumentException("File not found: " + fileName);
+//        } else {
+//            return new File(url.toURI());
+//        }
+//
+//    }
 }
